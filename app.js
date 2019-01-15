@@ -1,13 +1,10 @@
 import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import express from 'express';
+import cors from 'cors';
 import bodyParser from 'body-parser';
-import morgan from 'morgan';
-import rfs from 'rotating-file-stream';
 import jwt from 'express-jwt';
-import winston from './src/config/winston';
 
 import databaseMiddleware from './src/middleware/database';
 import errorMiddleware from './src/middleware/error';
@@ -15,28 +12,22 @@ import errorMiddleware from './src/middleware/error';
 import router from './src/routes/index';
 
 const app = express();
-const public_key = fs.readFileSync(path.join(__dirname, 'public.key'));
 
 app.use(cors());
+app.use(function (req, res, next) {
+  //Enabling CORS
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "OPTIONS,GET,POST,PUT,DELETE");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-client-key, x-client-token, x-client-secret, Authorization");
+  next();
+});
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-
-app.use(morgan('dev', {
-  skip: function (req, res) { return res.statusCode < 400 },
-  stream: winston.stream
-}));
-
-app.use(morgan('combined', {
-  stream: rfs('access.log', {
-    interval: '1d',
-    path: path.join(__dirname, 'logs', 'access')
-  })
-}));
 
 app.use(databaseMiddleware);
 
 app.use(jwt({
-  secret: public_key,
+  secret: process.env.SECRET,
   credentialsRequired: true,
   getToken: function fromHeaderOrQuerystring(req) {
     if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
@@ -49,19 +40,21 @@ app.use(jwt({
 }).unless({
   path: [
     // public routes that don't require authentication
-    '/usuario/autenticar',
-    '/usuario'
+    '/user/auth',
   ]
 }));
 
-app.use(errorMiddleware);
-
 app.use('/', router);
 
-app.use(function (req, res) {
-  res.status(404).json({error: true, code: 404, message: 'Page not found!'});
-});
+app.use(errorMiddleware);
+
+var log = fs.createWriteStream(path.join(__dirname, 'logs', 'server.log'), { flags: 'a' });
 
 app.listen(process.env.APP_PORT || 3000, () => {
   console.log(`Listening to port ${process.env.APP_PORT || 3000}`);
+  log.write(`Server started: ${new Date()}` + '\r\n');
+}).on('error', (e) => {
+  e.date = new Date();
+  console.log(e);
+  log.write(JSON.stringify(e) + '\r\n');
 });

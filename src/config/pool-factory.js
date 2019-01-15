@@ -6,14 +6,15 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
+  timezone: 'utc'
 });
-// console.log('pool => created');
-// pool.on('release', () => console.log('pool => connection returned'));
+// console.log('pool => criado');
+// pool.on('release', () => console.log('pool => conexão retornada'));
 process.on('SIGINT', () =>
   pool.end(err => {
-    if (err) return console.log(err);
-    // console.log('pool => closed');
+    if (err) return next(err);
+    // console.log('pool => fechado');
     process.exit(0);
   })
 );

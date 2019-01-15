@@ -1,12 +1,13 @@
-import appRoot from 'app-root-path';
 import path from 'path';
 import winston from 'winston';
+
+var filePath = path.join(__dirname, '../../logs/error.log');
 
 // define the custom settings for each transport (file, console)
 const options = {
   file: {
     level: 'info',
-    filename: path.join(appRoot.toString(), 'logs', 'error', 'error.log'),
+    filename: filePath,
     handleExceptions: true,
     maxsize: 5242880, // 5MB
     maxFiles: 5,

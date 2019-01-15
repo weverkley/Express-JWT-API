@@ -1,5 +1,4 @@
 import express from 'express';
-import winston from '../config/winston';
 import User from '../models/user';
 
 const router = express.Router();
@@ -18,8 +17,12 @@ router.get('/', (req, res, next) => {
     }
   ];
   res.json(languages);
+  // req.connection.query('SELECT * FROM user', (err, result) => {
+  //   if (err) return next(err);
+  //   res.json(result);
+  //   // não preciso me preocupar em devolver a conexão para o pool
+  // });
 });
-
 router.get('/users', (req, res, next) => {
   let users = [
     new User('James Coonce', 'jcoonce', 'none@none.com'),
@@ -35,17 +38,6 @@ router.post('/user/create', (req, res) => {
   let user = new User(req.body.name,
     req.body.username, req.body.email);
   res.json(user);
-});
-
-router.get('/user/test', (req, res, next) => {
-  req.connection.query(`SELECT * FROM users`, (error, results, fields) => {
-    if (error) {
-      winston.error(`${error.status || 500} - ${error.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-      res.json({ error: true, code: error.status || 500, message: error.message });
-      return next(error);
-    }
-    res.json({ error: false, data: results, message: "" });
-  });
-});
+})
 
 export default router;
